@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>AR Камера — Чарівне Пригодництво!</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background: transparent;
+    }
+    a-scene {
+      width: 100% !important;
+      height: 100% !important;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: transparent;
+    }
+
+    #scanText {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #FF69B4;
+      font-size: 2em;
+      font-weight: bold;
+      text-shadow: 2px 2px 10px yellow, 0 0 10px #ff00ff;
+      z-index: 10;
+      text-align: center;
+      width: 90%;
+      animation: pulse 1.5s infinite;
+      background: rgba(255, 255, 0, 0.9);
+      padding: 15px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.8);
+    }
+    @keyframes pulse {
+      0% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    #clickToStart {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+      font-size: 1.8em;
+      text-align: center;
+      padding: 20px;
+    }
+    #clickToStart span {
+      display: inline-block;
+      animation: bounce 1s infinite;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+
+    #centerYellowDot {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      background: #FFD700;
+      border-radius: 50%;
+      z-index: 10;
+      display: none;
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
+      opacity: 0.9;
+    }
+
+    #smartLessaBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(45deg, #ff0044, #ff6600);
+      color: white;
+      padding: 14px 24px;
+      border-radius: 30px;
+      font-size: 1.1em;
+      font-weight: bold;
+      text-decoration: none;
+      z-index: 10;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Підказка: клікни, щоб увімкнути -->
+  <div id="clickToStart">
+    Клацни, щоб<br>увімкнути чари! ✨<br>
+    <span>👇</span>
+  </div>
+
+  <!-- Інструкція AR -->
+  <div id="scanText">🔍 Наведи на зображення!</div>
+
+  <!-- Жовта крапка -->
+  <div id="centerYellowDot"></div>
+
+  <!-- AR Сцена -->
+  <a-scene embedded arjs="sourceType: webcam; detectionMode: mono; trackingMethod: best;">
+    <a-marker id="marker" type="pattern" url="marker.patt">
+      <a-video 
+        id="arVideo" 
+        src="ar-video.mp4" 
+        position="0 0 0" 
+        rotation="-90 0 0" 
+        preload="none"
+        autoplay="false"
+        muted="true">
+      </a-video>
+    </a-marker>
+    <a-entity camera></a-entity>
+  </a-scene>
+
+  <!-- Кнопка YouTube -->
+  <a href="https://youtube.com/playlist?list=PL6UDFwT9TzFxsVdFiEBsQ9yFpcYRPOpfO&si=IyXv1SkdPyvhcW7Z" 
+     id="smartLessaBtn" target="_blank">👉 Дивись більше на @SmartLessa</a>
+
+  <!-- Звук -->
+  <audio id="successSound" src="https://cdn.pixabay.com/audio/2021/09/21/audio_2811f3692c.mp3" preload="auto"></audio>
+
+  <script>
+    const marker = document.getElementById('marker');
+    const scanText = document.getElementById('scanText');
+    const centerYellowDot = document.getElementById('centerYellowDot');
+    const arVideo = document.getElementById('arVideo');
+    const successSound = document.getElementById('successSound');
+    const clickToStart = document.getElementById('clickToStart');
+
+    let canPlay = false; // Чи дозволив користувач грати
+
+    // Перший клік — розблокує можливість грати
+    clickToStart.addEventListener('click', function() {
+      clickToStart.style.display = 'none'; // Приховуємо екран
+      canPlay = true;
+    });
+
+    // Пропорції відео
+    arVideo.addEventListener('loadedmetadata', () => {
+      const videoWidth = arVideo.videoWidth;
+      const videoHeight = arVideo.videoHeight;
+      const scaleFactor = 2;
+      const height = (videoHeight / 100) * scaleFactor;
+      const width = (videoWidth / videoHeight) * height;
+      arVideo.setAttribute('width', width);
+      arVideo.setAttribute('height', height);
+    });
+
+    // Маркер знайдено
+    marker.addEventListener('markerFound', () => {
+      scanText.style.display = 'none';
+      centerYellowDot.style.display = 'block';
+
+      if (canPlay) {
+        arVideo.play().catch(() => {});
+        successSound.play().catch(() => {});
+      }
+    });
+
+    // Маркер втрачено
+    marker.addEventListener('markerLost', () => {
+      scanText.style.display = 'block';
+      centerYellowDot.style.display = 'none';
+      arVideo.pause();
+    });
+
+    // Фікс висоти
+    function fixHeight() {
+      document.body.style.height = window.innerHeight + 'px';
+    }
+    window.addEventListener('resize', fixHeight);
+    fixHeight();
+
+    // Задня камера
+    AFRAME.utils.device.getCameraPermission = function () {
+      return navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+    };
+  </script>
+</body>
+</html>

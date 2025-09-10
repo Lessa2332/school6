@@ -18,39 +18,55 @@
       z-index: 1000;
       text-shadow: 2px 2px 4px black;
     }
+    #startBtn {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #ff0044;
+      color: white;
+      padding: 20px 40px;
+      border-radius: 50px;
+      font-size: 1.5em;
+      cursor: pointer;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
   </style>
 </head>
 <body>
 
   <div id="score">Привидів спіймано: 0</div>
+  <button id="startBtn">▶ Почати гру</button>
 
   <a-scene
     vr-mode-ui="enabled: false"
     renderer="colorManagement: true; physicallyCorrectLights: true;"
     arjs="trackingMethod: best; sourceType: webcam;"
     embedded
+    style="display: none;" <!-- Спочатку приховано -->
   >
     <a-assets>
-      <img id="ghost" src="https://i.ibb.co/0XZ0XZ0/ghost.png" /> <!-- заміни на свій PNG -->
+      <img id="ghost" src="https://i.ibb.co/0XZ0XZ0/ghost.png" />
       <audio id="ghostAudio" src="https://raw.githubusercontent.com/Lessa2332/AR-Footprints-Game/main/audio/boo.mp3"></audio>
     </a-assets>
 
     <a-entity camera></a-entity>
 
-    <!-- Сюди динамічно додаватимемо привидів -->
     <a-entity id="ghostsContainer"></a-entity>
   </a-scene>
 
   <script>
     let score = 0;
     const scoreEl = document.getElementById('score');
+    const startBtn = document.getElementById('startBtn');
+    const scene = document.querySelector('a-scene');
     const ghostsContainer = document.getElementById('ghostsContainer');
     const ghostAudio = document.getElementById('ghostAudio');
 
     function spawnGhost() {
-      // Випадкова позиція в межах AR-простору
       const x = (Math.random() - 0.5) * 3;
-      const z = -Math.random() * 4 - 1; // трохи впереді
+      const z = -Math.random() * 4 - 1;
 
       const ghost = document.createElement('a-image');
       ghost.setAttribute('src', '#ghost');
@@ -59,22 +75,24 @@
       ghost.setAttribute('rotation', '-90 0 0');
       ghost.setAttribute('class', 'ghost');
 
-      // При кліку
       ghost.addEventListener('click', () => {
         ghostAudio.currentTime = 0;
         ghostAudio.play();
         ghost.setAttribute('visible', 'false');
         score++;
         scoreEl.innerText = `Привидів спіймано: ${score}`;
-        setTimeout(spawnGhost, 5000); // новий через 5 сек
+        setTimeout(spawnGhost, 5000);
       });
 
       ghostsContainer.appendChild(ghost);
     }
 
-    // Чекаємо завантаження сцени
-    document.querySelector('a-scene').addEventListener('loaded', () => {
-      spawnGhost(); // перший привид
+    // При кліку на кнопку — вмикаємо AR
+    startBtn.addEventListener('click', () => {
+      startBtn.style.display = 'none';
+      scene.style.display = 'block'; // Показуємо сцену
+      scene.setAttribute('arjs', 'sourceType: webcam'); // Активуємо камеру
+      spawnGhost(); // Перший привид
     });
   </script>
 </body>

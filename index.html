@@ -1,392 +1,81 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AR-Україна: Навчайся у реальності майбутнього</title>
-  <meta name="description" content="Інтерактивне AR-навчання про Україну з вікториною" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>👻 Полювання на привидів</title>
+  <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-ar@2.0.1/dist/aframe-ar.min.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      overflow: hidden;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      background: #000;
-    }
-
-    #overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.6);
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
+    body { margin: 0; overflow: hidden; }
+    #score {
+      position: fixed;
+      top: 20px;
+      left: 20px;
       color: white;
       font-size: 24px;
-      text-align: center;
-      z-index: 10;
-      transition: opacity 0.5s ease;
-      padding: 20px;
-    }
-
-    #overlay.hidden {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    #overlay p {
-      margin: 10px 0 0;
-      font-size: 18px;
-      opacity: 0.9;
-    }
-
-    #video-controls {
-      position: absolute;
-      bottom: 20px;
-      width: 100%;
-      text-align: center;
-      z-index: 20;
-      display: none;
-    }
-
-    button {
-      padding: 12px 20px;
-      margin: 5px;
-      font-size: 16px;
-      cursor: pointer;
-      background-color: #0057b7; /* Синій — колір прапора */
-      color: white;
-      border: none;
-      border-radius: 8px;
-      transition: background-color 0.3s, color 0.3s;
-    }
-
-    button:hover, button:focus {
-      background-color: #ffd700; /* Жовтий — другий колір */
-      color: black;
-      outline: 2px solid white;
-    }
-
-    #quiz-container {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      background: rgba(0, 0, 0, 0.9);
-      color: white;
-      padding: 25px;
-      border-radius: 12px;
-      max-width: 90%;
-      width: 400px;
-      text-align: center;
-      z-index: 30;
-      display: none;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    }
-
-    #quiz-container h2 {
-      margin: 0 0 16px;
-      font-size: 22px;
-    }
-
-    #question {
-      font-size: 18px;
-      margin-bottom: 16px;
-    }
-
-    #options {
-      margin-bottom: 20px;
-    }
-
-    .option {
-      padding: 12px;
-      margin: 8px 0;
-      background: #333;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: transform 0.1s;
-      border: 1px solid #555;
-    }
-
-    .option:hover {
-      background: #444;
-    }
-
-    .option:focus {
-      outline: 2px solid #ffd700;
-    }
-
-    .option.correct {
-      background: #28a745;
-      color: white;
-      animation: correct 0.5s;
       font-weight: bold;
-    }
-
-    .option.incorrect {
-      background: #dc3545;
-      color: white;
-      animation: incorrect 0.5s;
-    }
-
-    @keyframes correct {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
-    }
-
-    @keyframes incorrect {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-10px); }
-      50% { transform: translateX(10px); }
-      75% { transform: translateX(-10px); }
-      100% { transform: translateX(0); }
-    }
-
-    #next-question, #return-to-ar {
-      display: none;
+      z-index: 1000;
+      text-shadow: 2px 2px 4px black;
     }
   </style>
 </head>
 <body>
 
-  <!-- Інструкція на початку -->
-  <div id="overlay">
-    <div>
-      <div>🔍 Наведи камеру на маркер</div>
-      <p>Роздрукуй <strong>marker.png</strong> або відкрий на іншому пристрої</p>
-    </div>
-  </div>
+  <div id="score">Привидів спіймано: 0</div>
 
-  <!-- Кнопки керування відео -->
-  <div id="video-controls">
-    <button onclick="playVideo()">▶️ Запустити відео</button>
-    <button onclick="pauseVideo()">⏸ Пауза</button>
-    <button onclick="stopVideo()">⏹ Зупинити</button>
-    <button onclick="showQuiz()">👉 Вікторина</button>
-  </div>
-
-  <!-- Вікторина -->
-  <div id="quiz-container">
-    <h2>Вікторина про Україну</h2>
-    <div id="question"></div>
-    <div id="options"></div>
-    <button id="next-question">Наступне питання</button>
-    <button id="return-to-ar">🔄 Повернутися</button>
-  </div>
-
-  <!-- AR-сцена -->
   <a-scene
-    embedded
-    arjs="sourceType: webcam; debugUIEnabled: false;"
     vr-mode-ui="enabled: false"
+    renderer="colorManagement: true; physicallyCorrectLights: true;"
+    arjs="trackingMethod: best; sourceType: webcam;"
+    embedded
   >
-    <!-- Твій кастомний маркер -->
-    <a-marker type="pattern" url="./markers/marker.patt">
-      <a-video
-        id="ar-video"
-        src="./video/ar-video.mp4"
-        width="2"
-        height="1.125"
-        position="0 0 0"
-        rotation="-90 0 0"
-        autoplay="false"
-        muted
-        playsinline
-      ></a-video>
-    </a-marker>
+    <a-assets>
+      <img id="ghost" src="https://i.ibb.co/0XZ0XZ0/ghost.png" /> <!-- заміни на свій PNG -->
+      <audio id="ghostAudio" src="https://raw.githubusercontent.com/Lessa2332/AR-Footprints-Game/main/audio/boo.mp3"></audio>
+    </a-assets>
 
     <a-entity camera></a-entity>
+
+    <!-- Сюди динамічно додаватимемо привидів -->
+    <a-entity id="ghostsContainer"></a-entity>
   </a-scene>
 
-  <!-- Скрипти після контенту -->
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.5.0/dist/aframe.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.0/aframe/build/aframe-ar.js"></script>
-
   <script>
-    // Елементи
-    const overlay = document.getElementById('overlay');
-    const videoControls = document.getElementById('video-controls');
-    const videoEl = document.getElementById('ar-video');
-    const quizContainer = document.getElementById('quiz-container');
-    const questionEl = document.getElementById('question');
-    const optionsEl = document.getElementById('options');
-    const nextButton = document.getElementById('next-question');
-    const returnButton = document.getElementById('return-to-ar');
+    let score = 0;
+    const scoreEl = document.getElementById('score');
+    const ghostsContainer = document.getElementById('ghostsContainer');
+    const ghostAudio = document.getElementById('ghostAudio');
 
-    // Звуки
-    const correctSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-01a.mp3');
-    const incorrectSound = new Audio('https://www.soundjay.com/buttons/sounds/beep-02.mp3');
+    function spawnGhost() {
+      // Випадкова позиція в межах AR-простору
+      const x = (Math.random() - 0.5) * 3;
+      const z = -Math.random() * 4 - 1; // трохи впереді
 
-    // Розблокування звуку при першому кліку
-    let soundUnlocked = false;
-    document.body.addEventListener('click', unlockAudio, { once: true });
+      const ghost = document.createElement('a-image');
+      ghost.setAttribute('src', '#ghost');
+      ghost.setAttribute('position', `${x} 0 ${z}`);
+      ghost.setAttribute('scale', '0.5 0.5 0.5');
+      ghost.setAttribute('rotation', '-90 0 0');
+      ghost.setAttribute('class', 'ghost');
 
-    function unlockAudio() {
-      soundUnlocked = true;
-      // Тихе програвання для активації
-      correctSound.volume = 0;
-      incorrectSound.volume = 0;
-      correctSound.play().then(() => {
-        correctSound.volume = 1;
-        incorrectSound.volume = 1;
-      }).catch(() => {
-        console.warn("Автоматичне відтворення звуку заблоковано.");
-      });
-    }
-
-    // Питання вікторини
-    const questions = [
-      {
-        question: "Столиця України?",
-        options: ["Київ", "Львів", "Одеса", "Харків"],
-        correct: 0
-      },
-      {
-        question: "Державна мова України?",
-        options: ["Російська", "Українська", "Польська"],
-        correct: 1
-      },
-      {
-        question: "Який символ на гербі України?",
-        options: ["Зірка", "Тризуб", "Сонце"],
-        correct: 1
-      },
-      {
-        question: "Рік проголошення Незалежності України?",
-        options: ["1990", "1991", "1992"],
-        correct: 1
-      },
-      {
-        question: "Найбільша річка України?",
-        options: ["Дніпро", "Дунай", "Дністер"],
-        correct: 0
-      }
-    ];
-
-    let currentQuestion = 0;
-
-    // Обробка маркера
-    const marker = document.querySelector('a-marker');
-    marker.addEventListener('markerFound', () => {
-      overlay.classList.add('hidden');
-      videoControls.style.display = 'block';
-    });
-
-    marker.addEventListener('markerLost', () => {
-      overlay.classList.remove('hidden');
-      videoControls.style.display = 'none';
-      if (quizContainer.style.display === 'block') {
-        if (confirm("Маркер втрачено. Повернутися до сканування?")) {
-          quizContainer.style.display = 'none';
-          stopVideo();
-        }
-      } else {
-        stopVideo();
-      }
-    });
-
-    // Керування відео
-    function getVideo() {
-      return videoEl.components.material.material.map.image;
-    }
-
-    function playVideo() {
-      const video = getVideo();
-      if (video) video.play().catch(e => console.error("Помилка відтворення:", e));
-    }
-
-    function pauseVideo() {
-      const video = getVideo();
-      if (video) video.pause();
-    }
-
-    function stopVideo() {
-      const video = getVideo();
-      if (video) {
-        video.pause();
-        video.currentTime = 0;
-      }
-    }
-
-    // Вікторина
-    function showQuiz() {
-      videoControls.style.display = 'none';
-      quizContainer.style.display = 'block';
-      currentQuestion = 0;
-      displayQuestion();
-    }
-
-    function displayQuestion() {
-      const q = questions[currentQuestion];
-      questionEl.textContent = q.question;
-      optionsEl.innerHTML = '';
-
-      q.options.forEach((option, index) => {
-        const btn = document.createElement('button');
-        btn.className = 'option';
-        btn.textContent = option;
-        btn.onclick = () => checkAnswer(index);
-        btn.tabIndex = 0;
-        btn.onkeydown = (e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            checkAnswer(index);
-          }
-        };
-        optionsEl.appendChild(btn);
+      // При кліку
+      ghost.addEventListener('click', () => {
+        ghostAudio.currentTime = 0;
+        ghostAudio.play();
+        ghost.setAttribute('visible', 'false');
+        score++;
+        scoreEl.innerText = `Привидів спіймано: ${score}`;
+        setTimeout(spawnGhost, 5000); // новий через 5 сек
       });
 
-      nextButton.style.display = 'none';
+      ghostsContainer.appendChild(ghost);
     }
 
-    function checkAnswer(index) {
-      const q = questions[currentQuestion];
-      const options = optionsEl.children;
-
-      if (index === q.correct) {
-        options[index].classList.add('correct');
-        if (soundUnlocked) correctSound.play();
-      } else {
-        options[index].classList.add('incorrect');
-        options[q.correct].classList.add('correct');
-        if (soundUnlocked) incorrectSound.play();
-      }
-
-      // Блокуємо кліки
-      for (let i = 0; i < options.length; i++) {
-        options[i].onclick = null;
-        options[i].onkeydown = null;
-      }
-
-      nextButton.style.display = 'block';
-      if (currentQuestion === questions.length - 1) {
-        nextButton.style.display = 'none';
-        returnButton.style.display = 'block';
-      }
-    }
-
-    nextButton.onclick = () => {
-      currentQuestion++;
-      if (currentQuestion < questions.length) {
-        displayQuestion();
-      }
-    };
-
-    returnButton.onclick = () => {
-      quizContainer.style.display = 'none';
-      videoControls.style.display = 'block';
-      stopVideo();
-    };
+    // Чекаємо завантаження сцени
+    document.querySelector('a-scene').addEventListener('loaded', () => {
+      spawnGhost(); // перший привид
+    });
   </script>
 </body>
 </html>
